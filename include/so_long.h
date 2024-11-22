@@ -5,102 +5,113 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: dtanski <dtanski@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/09/22 12:20:58 by dtanski           #+#    #+#             */
-/*   Updated: 2024/09/25 19:07:02 by dtanski          ###   ########.fr       */
+/*   Created: 2024/11/15 13:32:39 by dtanski   	       #+#    #+#             */
+/*   Updated: 2024/11/22 11:16:02 by dtanski          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef SO_LONG_H
 # define SO_LONG_H
 
-# include "../lib/minilibx/mlx.h"
-# include "../lib/minilibx/mlx_int.h"
+# include "key_alias.h"
 # include "../lib/libft/libft.h"
-
-# include <unistd.h>
-# include <stdio.h>
+# include "../lib/minilibx-linux/mlx.h"
 # include <fcntl.h>
-# include <stdlib.h>
-# include <string.h>
-# include <errno.h>
 
-typedef struct s_coord
+# define SPRITE_SIZE 50
+
+# define COLLECTIBLE "textures/collectible.xpm"
+# define EXIT "textures/exit.xpm"
+# define WALL "textures/wall.xpm"
+# define FLOOR "textures/tile.xpm"
+# define PLAYER_R "textures/player-right.xpm"
+# define PLAYER_L "textures/player-left.xpm"
+# define PLAYER_U "textures/player-up.xpm"
+# define PLAYER_D "textures/player-down.xpm"
+
+typedef struct s_map
 {
-	int				x;
-	int				y;
-}				t_coord;
+	char		**map;
+	int			map_width;
+	int			map_height;
+	int			player_x_position;
+	int			player_y_position;
+	int			exit_x;
+	int			exit_y;
+}				t_map;
 
-typedef struct s_game
+typedef struct s_image
 {
-	int				**map;
-	int				height;
-	int				width;
-	t_coord			player;
-	int				player_up;
-	int				player_down;
-	int				player_left;
-	int				player_right;
-	int				player_move;
-	int				player_coll;
-	t_coord			exit;
-	t_coord			*coll;
-	int				count_coll;
-	int				count_exit;
-	int				count_player;
-}			t_game;
+	void		*texture_ptr;
+	int			x;
+	int			y;
+}				t_image;
 
-typedef struct s_root
+typedef struct s_player
 {
-	void			*mlx;
-	void			*mlx_win;
-	t_img			*mlx_img;
-	t_game			*game;
-	t_img			*player;
-	t_img			*exit;
-	t_img			*coll;
-	t_img			*wall;
-	t_img			*ground;
-}				t_root;
+	t_image		player_r;
+	t_image		player_l;
+	t_image		player_u;
+	t_image		player_d;
+	char		direction;
+}				t_player;
 
-void			die(char *errmsg, int errnum);
+typedef struct s_data_game
+{
+	void		*mlx_ptr;
+	void		*win_ptr;
+	int			total_collectibles;
+	int			moves_count;
+	t_map		map;
+	t_image		collectible_image;
+	t_image		exit_image;
+	t_image		wall_image;
+	t_image		floor_image;
+	t_player	player;
+	/*check accesible elements*/
+	int			total_collectibles_found;
+	int			exit_found;
+}				t_data_game;
 
-void			draw(t_root *root);
+typedef struct s_element_count
+{
+	int	player;
+	int	exit;
+}	t_element_count;
 
-int				key_press(int keycode, t_root *root);
-int				key_release(int keycode, t_root *root);
-int				destroy_hook(int keycode, t_root *root);
+// init possition E and P, and move player
+void			init_positions(t_data_game *game);
+void			move_player_up(t_data_game *game);
+void			move_player_down(t_data_game *game);
+void			move_player_left(t_data_game *game);
+void			move_player_right(t_data_game *game);
 
-void			game_destroy(t_game *game);
+// init sprites and render sprites and map
+void			init_sprites(t_data_game *game);
+t_image			create_sprite(t_data_game *game, char *path);
+void			render_sprite(t_data_game *game, t_image *sprite, int line,
+					int column);
+void			render_player(t_data_game *game, int line, int column);
+int				render_map(t_data_game *game);
 
-void			game_init(t_root *root, char *filename);
+// read map with file and fill map and check expections
+void			read_map(t_data_game *game, char *path);
+void			fill_map(t_data_game *game, char *path);
+void			validate_elements(t_data_game *game);
+void			check_walls(t_data_game *game);
+void			count_elements(t_data_game *game);
+void			process_map_element(t_data_game *game, int i, int j,
+					t_element_count *count);
 
-void			map_height(t_root *root, char *file);
+// Utils
+int				open_map(char *path, t_data_game *game);
+char			*split_line(char *line);
+void			display_moves_and_collectibles(t_data_game *game);
 
-void			map_width(t_root *root, char *file);
-
-void			map_init(t_root *root, char *filename);
-
-void			map_isvalid(t_root *root, char *file);
-
-void			map_parsing(t_root *root, char *file);
-
-void			map_read(t_root *root, char *file);
-
-unsigned int	mlx_get_pixel(t_img *img, int x, int y);
-void			mlx_draw_pixel(t_img *mlx_img, int x, int y, int color);
-unsigned int	mlx_rgb_to_int(int o, int r, int g, int b);
-
-void			move_up(t_root *root, int x, int y);
-void			move_down(t_root *root, int x, int y);
-void			move_left(t_root *root, int x, int y);
-void			move_right(t_root *root, int x, int y);
-
-void			root_destroy(t_root *root, char *errmsg, int errnum);
-
-t_root			*root_init(char *filename);
-
-void			update(t_root *root);
+// Messages
+int				end_game(t_data_game *game, char *message, int code);
+void			destroy_images(t_data_game *game);
+void			exit_message(t_data_game *game, char *message, int code);
+void			validate_path(t_data_game *game);
 
 #endif
-
-
